@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=320, initial-scale=1"/>
+	<title>webvnc</title>  
+	<style type="text/css">
+		body {
+			background: #111;
+			text-align: center;
+			margin: 0;
+			padding: 0;
+			font-family: sans-serif;
+			color: #555;
+		}
+		body.desktop .mobile-only { display: none; }
+		body.mobile .desktop-only { display: none; }
+
+		#videoCanvas {
+			/* Always stretch the canvas to 100%, regardless of its
+			internal size. */
+			width: 100%;
+			height: 100%;
+		}
+
+		.display-container {
+            display: flex;
+            gap: 12px; /* 子元素间的间距 */
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 0px;
+        }
+        .display-item {
+            padding: 0px;
+        }
+		
+		.keys {
+			position: relative;
+		}
+		.key {
+			color: #fff;
+			float: left;
+			width: 72px;
+			height: 48px;
+			padding-top: 24px;
+			background-color: #5bcbeb;
+			position: absolute;
+		}
+		.key-small {
+			height: 28px;
+			padding-top: 8px;
+		}
+		#key-up {left: 40px; top: 0px; }
+		#key-down {left: 40px; top: 88px; }
+		#key-left {left: 160px; top: 0px; }
+		#key-right {left: 240px; top: 0px; }
+		#key-esc {left: 160px; top: 124px; }
+		#key-enter {left: 240px; top: 124px; }
+	</style>
+	<script>
+		// 禁用鼠标右键的函数
+		function disableRightClick(e) {
+			if (e.button == 2) {
+				// 阻止默认的右键菜单
+				e.preventDefault();
+			}
+		}
+		 
+		// 页面加载完成后绑定事件
+		window.onload = function() {
+			document.addEventListener('contextmenu', disableRightClick);
+		};
+	</script>
+</head>
+<body>
+	<canvas id="videoCanvas" width="640" height="480"></canvas>
+
+	<!-- 包含所有显示元素的容器 -->
+    <div class="display-container">
+        <div id="codecDisplay" class="display-item">CODEC: N/A</div>
+        <div id="grabberDisplay" class="display-item">GRABBER: N/A</div>
+        <div id="fpsDisplay" class="display-item">FPS: N/A</div>
+    </div>
+	
+	<div class="keys mobile-only">
+		<div class="key" data-code="38" id="key-up">UP</div>
+		<div class="key" data-code="40" id="key-down">DOWN</div>
+		<div class="key" data-code="39" id="key-right">RIGHT</div>
+		<div class="key" data-code="37" id="key-left">LEFT</div>
+		
+		<div class="key key-small" data-code="27" id="key-esc">ESC</div>
+		<div class="key key-small" data-code="13" id="key-enter">ENTER</div>
+	</div>
+
+	<script type="text/javascript" src="bsd_canvas.js" ></script>   	
+	<script type="text/javascript" src="jsvmpp-vnc_noQSBP.js" ></script>  
+	
+	<script>
+		function isValidIP(str) {
+		// Matching IP Addresses with Regular Expressions
+		var ipPattern = /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
+		return ipPattern.test(str);
+		}
+		// Get the parameters in the URL
+        const params = new URLSearchParams(window.location.search);
+        var IPofWS = params.get('ws');
+		if (IPofWS == null) IPofWS = prompt("Please input IP of VM and hit Enter.", "10.21.36.128"); // A prompt box pops up asking for the IP of the VM
+		if(!isValidIP(IPofWS)) {
+			alert("Not a IP, please check if the IP is correct.");
+			location.reload();
+		}
+		console.log("IPofWS:", IPofWS);
+
+	    // Set the body class to show/hide certain elements on mobile/desktop
+	    document.body.className = ('ontouchstart' in window) ? 'mobile' : 'desktop';
+        // Setup the WebSocket connection and start the player
+        // var client = new WebSocket( 'ws://' + window.location.host + '/ws' );
+		// var client = new WebSocket(((window.location.protocol === 'https:') ? 'wss://' : 'ws://') + window.location.host + '/ws' );
+		var client = new WebSocket(((window.location.protocol === 'https:') ? 'wss://' : 'ws://') + IPofWS + ':8080/ws' );
+		console.log('JS: ', 'ws://' + IPofWS + ':8080/ws');
+        var canvas = document.getElementById('videoCanvas');
+        var player = new js264(client, {canvas:canvas});
+    </script>
+	
+</body>
+</html>
